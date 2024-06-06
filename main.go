@@ -4,16 +4,18 @@ import "github.com/i101dev/blockchain-api/blockchain"
 
 // ---------------------------------------------------
 func main() {
-	blockchain := blockchain.NewBlockchain()
+	blockchain := blockchain.NewBlockchain("MINING_REWARD_ADDRESS")
 
-	previousHash := blockchain.LastBlock().Hash()
-	blockchain.CreateBlock(2, previousHash)
+	blockchain.AddTransaction("A", "B", 1.0)
+	blockchain.AddTransaction("B", "C", 2.0)
+	blockchain.AddTransaction("C", "A", 3.0)
 
-	previousHash = blockchain.LastBlock().Hash()
-	blockchain.CreateBlock(4, previousHash)
+	blockchain.Mining()
 
-	previousHash = blockchain.LastBlock().Hash()
-	blockchain.CreateBlock(6, previousHash)
+	blockchain.AddTransaction("R", "G", 200.0)
+	blockchain.AddTransaction("H", "P", 15.0)
+
+	blockchain.Mining()
 
 	blockchain.Print()
 }

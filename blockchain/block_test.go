@@ -8,7 +8,7 @@ import (
 
 func TestMakeBlock(t *testing.T) {
 	//
-	b := NewBlock(0, [32]byte{})
+	b := NewBlock(0, [32]byte{}, []*Transaction{})
 	//
 	assert.Equal(t, b.nonce, 0)
 	assert.Equal(t, b.previousHash, [32]byte{})
