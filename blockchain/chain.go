@@ -1,9 +1,13 @@
 package blockchain
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/i101dev/blockchain-api/utils"
 )
 
 // ------------------------------------------------------------------
@@ -42,10 +46,29 @@ func (bc *Blockchain) Print() {
 	fmt.Printf("%s\n", strings.Repeat("*", 89))
 }
 
-func (bc *Blockchain) AddTransaction(sender string, recipient string, value float32) error {
-	t := NewTransaction(sender, recipient, value)
-	bc.transactionPool = append(bc.transactionPool, t)
-	return nil
+func (bc *Blockchain) AddTransaction(sender string, recipient string, value float32, senderPublicKey *ecdsa.PublicKey, sig *utils.Signature) bool {
+
+	txn := NewTransaction(sender, recipient, value)
+
+	if sender == MINING_SENDER {
+		bc.transactionPool = append(bc.transactionPool, txn)
+		return true
+	}
+
+	if bc.VerifyTransactionSignature(senderPublicKey, sig, txn) {
+		bc.transactionPool = append(bc.transactionPool, txn)
+		return true
+	}
+
+	fmt.Println("failed to verify transaction signature")
+
+	return false
+}
+
+func (bc *Blockchain) VerifyTransactionSignature(senderPublicKey *ecdsa.PublicKey, sig *utils.Signature, txn *Transaction) bool {
+	m, _ := json.Marshal(txn)
+	hash := sha256.Sum256([]byte(m))
+	return ecdsa.Verify(senderPublicKey, hash[:], sig.R, sig.S)
 }
 
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
@@ -97,7 +120,7 @@ func (bc *Blockchain) LastBlock() *Block {
 }
 
 func (bc *Blockchain) Mining() bool {
-	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD)
+	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD, nil, nil)
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)

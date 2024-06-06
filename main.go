@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/i101dev/blockchain-api/blockchain"
 	"github.com/i101dev/blockchain-api/wallet"
 )
 
@@ -28,8 +29,24 @@ func main() {
 
 	fmt.Println("\n***************")
 
-	w := wallet.NewWallet()
+	miner := wallet.NewWallet()
+	sender := wallet.NewWallet()
+	recipient := wallet.NewWallet()
 
-	fmt.Printf("Private key: %s\n", w.PrivateKeyStr())
-	fmt.Printf("Public key: %s\n", w.PublicKeyStr())
+	// fmt.Printf("Private key: %s\n", sender.PrivateKeyStr())
+	// fmt.Printf("Public key: %s\n", sender.PublicKeyStr())
+	// fmt.Printf("Address: %s\n", sender.BlockchainAddress())
+
+	tx1_amount := 123
+
+	// Transaction
+	tx1 := wallet.NewWalletTransaction(sender.PrivateKey(), sender.PublicKey(), sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount))
+
+	// Blockchain
+	blockchain := blockchain.NewBlockchain(miner.BlockchainAddress())
+
+	isAdded := blockchain.AddTransaction(sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount), sender.PublicKey(), tx1.GenerateSignature())
+
+	fmt.Println("transaction added successfully: ", isAdded)
+	// fmt.Printf("signature: %s\n", tx1.GenerateSignature())
 }
