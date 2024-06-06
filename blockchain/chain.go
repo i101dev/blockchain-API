@@ -3,7 +3,6 @@ package blockchain
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -11,7 +10,7 @@ import (
 const (
 	MINING_DIFFICULTY = 3
 	MINING_SENDER     = "THE BLOCKCHAIN"
-	MINING_REWARD     = 1.0
+	MINING_REWARD     = 100.0
 )
 
 // ------------------------------------------------------------------
@@ -102,8 +101,28 @@ func (bc *Blockchain) Mining() bool {
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
-	log.Println("action=mining, status=success")
+	// log.Println("action=mining, status=success")
 	return true
+}
+
+func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
+
+	var totalAmount float32 = 0.0
+
+	for _, b := range bc.chain {
+		for _, t := range b.transactions {
+
+			if t.recipientBlockchainAddress == blockchainAddress {
+				totalAmount += t.value
+			}
+
+			if t.senderBlockchainAddress == blockchainAddress {
+				totalAmount -= t.value
+			}
+		}
+	}
+
+	return totalAmount
 }
 
 // -------------------------------------------------------------------------
