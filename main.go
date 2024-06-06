@@ -37,7 +37,7 @@ func main() {
 	// fmt.Printf("Public key: %s\n", sender.PublicKeyStr())
 	// fmt.Printf("Address: %s\n", sender.BlockchainAddress())
 
-	tx1_amount := 123
+	tx1_amount := 13
 
 	// Transaction
 	tx1 := wallet.NewWalletTransaction(sender.PrivateKey(), sender.PublicKey(), sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount))
@@ -49,4 +49,11 @@ func main() {
 
 	fmt.Println("transaction added successfully: ", isAdded)
 	// fmt.Printf("signature: %s\n", tx1.GenerateSignature())
+
+	blockchain.Mining()
+	blockchain.Print()
+	//
+	fmt.Printf("*** >>> miner: (%.1f)\n", blockchain.CalculateTotalAmount(miner.BlockchainAddress()))
+	fmt.Printf("*** >>> sender: (%.1f)\n", blockchain.CalculateTotalAmount(sender.BlockchainAddress()))
+	fmt.Printf("*** >>> recipient: (%.1f)\n", blockchain.CalculateTotalAmount(recipient.BlockchainAddress()))
 }

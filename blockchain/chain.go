@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/i101dev/blockchain-api/utils"
@@ -56,6 +57,12 @@ func (bc *Blockchain) AddTransaction(sender string, recipient string, value floa
 	}
 
 	if bc.VerifyTransactionSignature(senderPublicKey, sig, txn) {
+
+		if bc.CalculateTotalAmount(sender) < value {
+			log.Println("insufficient funds")
+			return false
+		}
+
 		bc.transactionPool = append(bc.transactionPool, txn)
 		return true
 	}
