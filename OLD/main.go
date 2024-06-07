@@ -2,13 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/i101dev/blockchain-api/blockchain"
 	"github.com/i101dev/blockchain-api/wallet"
 )
 
-// ---------------------------------------------------
+func init() {
+	log.SetPrefix("Blockchain: ")
+}
+
 func main() {
+
 	// blockchain := blockchain.NewBlockchain("MINING_REWARD_ADDRESS")
 
 	// blockchain.AddTransaction("A", "B", 1.0)
@@ -27,7 +32,7 @@ func main() {
 
 	// fmt.Printf("MINING_REWARD_ADDRESS %.1f\n", blockchain.CalculateTotalAmount("MINING_REWARD_ADDRESS"))
 
-	fmt.Println("\n***************")
+	// fmt.Println("\n***************")
 
 	miner := wallet.NewWallet()
 	sender := wallet.NewWallet()
@@ -39,11 +44,9 @@ func main() {
 
 	tx1_amount := 13
 
-	// Transaction
-	tx1 := wallet.NewWalletTransaction(sender.PrivateKey(), sender.PublicKey(), sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount))
+	blockchain := blockchain.NewBlockchain(miner.BlockchainAddress(), 5000)
 
-	// Blockchain
-	blockchain := blockchain.NewBlockchain(miner.BlockchainAddress())
+	tx1 := wallet.NewWalletTransaction(sender.PrivateKey(), sender.PublicKey(), sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount))
 
 	isAdded := blockchain.AddTransaction(sender.BlockchainAddress(), recipient.BlockchainAddress(), float32(tx1_amount), sender.PublicKey(), tx1.GenerateSignature())
 
@@ -52,8 +55,8 @@ func main() {
 
 	blockchain.Mining()
 	blockchain.Print()
-	//
-	fmt.Printf("*** >>> miner: (%.1f)\n", blockchain.CalculateTotalAmount(miner.BlockchainAddress()))
-	fmt.Printf("*** >>> sender: (%.1f)\n", blockchain.CalculateTotalAmount(sender.BlockchainAddress()))
-	fmt.Printf("*** >>> recipient: (%.1f)\n", blockchain.CalculateTotalAmount(recipient.BlockchainAddress()))
+
+	// fmt.Printf("*** >>> miner: (%.1f)\n", blockchain.CalculateTotalAmount(miner.BlockchainAddress()))
+	// fmt.Printf("*** >>> sender: (%.1f)\n", blockchain.CalculateTotalAmount(sender.BlockchainAddress()))
+	// fmt.Printf("*** >>> recipient: (%.1f)\n", blockchain.CalculateTotalAmount(recipient.BlockchainAddress()))
 }

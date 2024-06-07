@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/i101dev/blockchain-api/utils"
@@ -14,8 +13,8 @@ import (
 // ------------------------------------------------------------------
 const (
 	MINING_DIFFICULTY = 3
-	MINING_SENDER     = "THE BLOCKCHAIN"
 	MINING_REWARD     = 100.0
+	MINING_SENDER     = "THE BLOCKCHAIN"
 )
 
 // ------------------------------------------------------------------
@@ -24,14 +23,28 @@ type Blockchain struct {
 	transactionPool   []*Transaction // equivalent to `memPool`
 	chain             []*Block
 	blockchainAddress string
+	port              uint16
 }
 
-func NewBlockchain(blockchainAddress string) *Blockchain {
+func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
+
 	b := &Block{}
 	bc := new(Blockchain)
+
+	bc.port = port
 	bc.blockchainAddress = blockchainAddress
+
 	bc.CreateBlock(0, b.Hash())
+
 	return bc
+}
+
+func (bc *Blockchain) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Blocks []*Block `json:"blocks"`
+	}{
+		Blocks: bc.chain,
+	})
 }
 
 func (bc *Blockchain) Print() {
@@ -58,16 +71,16 @@ func (bc *Blockchain) AddTransaction(sender string, recipient string, value floa
 
 	if bc.VerifyTransactionSignature(senderPublicKey, sig, txn) {
 
-		if bc.CalculateTotalAmount(sender) < value {
-			log.Println("insufficient funds")
-			return false
-		}
+		// if bc.CalculateTotalAmount(sender) < value {
+		// 	log.Println("insufficient funds")
+		// 	return false
+		// }
 
 		bc.transactionPool = append(bc.transactionPool, txn)
 		return true
 	}
 
-	fmt.Println("failed to verify transaction signature")
+	// fmt.Println("failed to verify transaction signature")
 
 	return false
 }
@@ -168,7 +181,7 @@ func NewTransaction(sender string, recipient string, value float32) *Transaction
 }
 
 func (t *Transaction) Print() {
-	fmt.Printf("\n	%s", strings.Repeat("-", 40))
+	fmt.Printf("\n	%s", strings.Repeat("-", 55))
 	fmt.Printf("\n	> sender address: %s", t.senderBlockchainAddress)
 	fmt.Printf("\n	> recipient address: %s", t.recipientBlockchainAddress)
 	fmt.Printf("\n	> transaction value: %.1f", t.value)

@@ -11,7 +11,6 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/i101dev/blockchain-api/utils"
-	"golang.org/x/crypto/ripemd160"
 )
 
 type Wallet struct {
@@ -32,8 +31,7 @@ func NewWallet() *Wallet {
 	h2.Write(w.publicKey.Y.Bytes())
 	digest2 := h2.Sum(nil)
 
-	h3 := ripemd160.New()
-	// h3 := sha256.New()
+	h3 := sha256.New()
 	h3.Write(digest2)
 	digest3 := h3.Sum(nil)
 
@@ -99,8 +97,6 @@ func NewWalletTransaction(privKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, se
 		value:                      value,
 	}
 }
-
-// -------------------------------------------------
 
 func (wt *WalletTXN) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
