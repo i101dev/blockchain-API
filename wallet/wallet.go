@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -147,6 +148,28 @@ type WalletTXNRequest struct {
 }
 
 func (tr *WalletTXNRequest) Validate() bool {
+
+	if tr.SenderPrivateKey == nil {
+		log.Panicln("SenderPrivateKey MISSING")
+		return false
+	}
+	if tr.SenderBlockchainAddress == nil {
+		log.Panicln("SenderBlockchainAddress MISSING")
+		return false
+	}
+	if tr.RecipientBlockchainAddress == nil {
+		log.Panicln("RecipientBlockchainAddress MISSING")
+		return false
+	}
+	if tr.SenderPublicKey == nil {
+		log.Panicln("SenderPublicKey MISSING")
+		return false
+	}
+	if tr.Value == nil {
+		log.Panicln("Value MISSING")
+		return false
+	}
+
 	if tr.SenderPrivateKey == nil ||
 		tr.SenderBlockchainAddress == nil ||
 		tr.RecipientBlockchainAddress == nil ||

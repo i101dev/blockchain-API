@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/i101dev/blockchain-api/blockchain"
+	"github.com/i101dev/blockchain-api/utils"
 	"github.com/i101dev/blockchain-api/wallet"
 )
 
@@ -19,18 +21,6 @@ type BlockchainServer struct {
 
 func NewBlockchainServer(port uint16) *BlockchainServer {
 	return &BlockchainServer{port}
-}
-
-func (bcs *BlockchainServer) GetChain(w http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case http.MethodGet:
-		w.Header().Add("Content-Type", "application/json")
-		bc := bcs.GetBlockchain()
-		m, _ := bc.MarshalJSON()
-		io.WriteString(w, string(m[:]))
-	default:
-		log.Printf("ERROR: Invalid HTTP Method")
-	}
 }
 
 func (bcs *BlockchainServer) Port() uint16 {
@@ -53,9 +43,80 @@ func (bcs *BlockchainServer) GetBlockchain() *blockchain.Blockchain {
 	return bc
 }
 
+func (bcs *BlockchainServer) GetChainData(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		w.Header().Add("Content-Type", "application/json")
+		bc := bcs.GetBlockchain()
+		m, _ := bc.MarshalJSON()
+		io.WriteString(w, string(m[:]))
+	default:
+		log.Printf("ERROR: Invalid HTTP Method")
+	}
+}
+
+func (bcs *BlockchainServer) Transactions(w http.ResponseWriter, req *http.Request) {
+
+	switch req.Method {
+	case http.MethodGet:
+		w.Header().Add("Content-Type", "application/json")
+
+		bc := bcs.GetBlockchain()
+		transactions := bc.TransactionPool()
+
+		m, _ := json.Marshal(struct {
+			Transactions []*blockchain.Transaction `json:"transactions"`
+			Length       int                       `json:"length"`
+		}{
+			Transactions: transactions,
+			Length:       len(transactions),
+		})
+
+		io.WriteString(w, string(m[:]))
+
+	case http.MethodPost:
+
+		var txn blockchain.TransactionRequest
+
+		decoder := json.NewDecoder(req.Body)
+		err := decoder.Decode(&txn)
+
+		if err != nil {
+			log.Printf("ERROR: %+v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if !txn.Validate() {
+			log.Println("ERROR: Missing field(s)")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		publicKey := utils.PublicKeyFromString(*txn.SenderPublicKey)
+		signature := utils.SignatureFromString(*txn.Signature)
+		bc := bcs.GetBlockchain()
+
+		isCreated := bc.CreateTransaction(*txn.SenderBlockchainAddress, *txn.RecipientBlockchainAddress, *txn.Value, publicKey, signature)
+
+		w.Header().Add("Content-Type", "application/json")
+
+		if !isCreated {
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
+
+	default:
+		log.Println("ERROR: Invalid HTTP Method")
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func (bcs *BlockchainServer) Run() {
 
-	http.HandleFunc("/", bcs.GetChain)
+	http.HandleFunc("/", bcs.GetChainData)
+	http.HandleFunc("/transactions", bcs.Transactions)
 
 	hostURL := "0.0.0.0:" + strconv.Itoa(int(bcs.Port()))
 

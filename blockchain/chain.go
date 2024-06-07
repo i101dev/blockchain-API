@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/i101dev/blockchain-api/utils"
@@ -39,6 +40,10 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 	return bc
 }
 
+func (bc *Blockchain) TransactionPool() []*Transaction {
+	return bc.transactionPool
+}
+
 func (bc *Blockchain) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Blocks []*Block `json:"blocks"`
@@ -58,6 +63,16 @@ func (bc *Blockchain) Print() {
 	}
 	fmt.Println()
 	fmt.Printf("%s\n", strings.Repeat("*", 89))
+}
+
+func (bc *Blockchain) CreateTransaction(sender string, recipient string, value float32, senderPublicKey *ecdsa.PublicKey, sig *utils.Signature) bool {
+
+	isTransacted := bc.AddTransaction(sender, recipient, value, senderPublicKey, sig)
+
+	// TODO
+	// Sync
+
+	return isTransacted
 }
 
 func (bc *Blockchain) AddTransaction(sender string, recipient string, value float32, senderPublicKey *ecdsa.PublicKey, sig *utils.Signature) bool {
@@ -197,4 +212,57 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 		Recipient: t.recipientBlockchainAddress,
 		Value:     t.value,
 	})
+}
+
+// -------------------------------------------------------------------------
+
+type TransactionRequest struct {
+	SenderBlockchainAddress    *string  `json:"sender_blockchain_address"`
+	RecipientBlockchainAddress *string  `json:"recipient_blockchain_address"`
+	SenderPublicKey            *string  `json:"sender_public_key"`
+	Signature                  *string  `json:"signature"`
+	Value                      *float32 `json:"value"`
+}
+
+// func (t *TransactionRequest) Print() {
+// 	fmt.Printf("\n	%s", strings.Repeat("-", 55))
+// 	fmt.Printf("\n	> SenderBlockchainAddress: %s", *t.SenderBlockchainAddress)
+// 	fmt.Printf("\n	> RecipientBlockchainAddress: %s", *t.RecipientBlockchainAddress)
+// 	fmt.Printf("\n	> SenderPublicKey: %s", *t.SenderPublicKey)
+// 	fmt.Printf("\n	> Signature: %s", *t.Signature)
+// 	// fmt.Printf("\n	> value: %.1f", t.Value)
+// }
+
+func (tr *TransactionRequest) Validate() bool {
+
+	// if tr.SenderBlockchainAddress == nil ||
+	// 	tr.RecipientBlockchainAddress == nil ||
+	// 	tr.SenderPublicKey == nil ||
+	// 	tr.Signature == nil ||
+	// 	tr.Value == nil {
+	// 	return false
+	// }
+
+	if tr.Value == nil {
+		log.Println("Value MISSING")
+		return false
+	}
+	if tr.SenderBlockchainAddress == nil {
+		log.Println("SenderBlockchainAddress MISSING")
+		return false
+	}
+	if tr.RecipientBlockchainAddress == nil {
+		log.Println("RecipientBlockchainAddress MISSING")
+		return false
+	}
+	if tr.SenderPublicKey == nil {
+		log.Println("SenderPublicKey MISSING")
+		return false
+	}
+	if tr.Signature == nil {
+		log.Println("Signature MISSING")
+		return false
+	}
+
+	return true
 }

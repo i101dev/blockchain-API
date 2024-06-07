@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/i101dev/blockchain-api/blockchain"
 	"github.com/i101dev/blockchain-api/utils"
 	"github.com/i101dev/blockchain-api/wallet"
 )
@@ -66,11 +68,16 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, req *http.Request) {
 }
 
 func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Request) {
+
 	switch req.Method {
+
 	case http.MethodPost:
-		decoder := json.NewDecoder(req.Body)
+
 		var txn wallet.WalletTXNRequest
+
+		decoder := json.NewDecoder(req.Body)
 		err := decoder.Decode(&txn)
+
 		if err != nil {
 			log.Printf("ERROR decoding wallet transaction: %+v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -83,15 +90,36 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Reque
 
 		publicKey := utils.PublicKeyFromString(*txn.SenderPublicKey)
 		privateKey := utils.PrivateKeyFromString(*txn.SenderPrivateKey, publicKey)
-		value := float32(*txn.Value)
+		value32 := float32(*txn.Value)
 
 		w.Header().Add("Content-Type", "application/json")
 
-		// fmt.Println(publicKey)
-		// fmt.Println(privateKey)
-		// fmt.Println("From: ", *txn.SenderBlockchainAddress)
-		// fmt.Println("To: ", *txn.RecipientBlockchainAddress)
-		// fmt.Printf("Value: %.1f\n", value)
+		transaction := wallet.NewWalletTransaction(privateKey, publicKey, *txn.SenderBlockchainAddress, *txn.RecipientBlockchainAddress, value32)
+		signature := transaction.GenerateSignature()
+		signatureStr := signature.String()
+
+		bt := &blockchain.TransactionRequest{
+			RecipientBlockchainAddress: txn.RecipientBlockchainAddress,
+			SenderBlockchainAddress:    txn.SenderBlockchainAddress,
+			SenderPublicKey:            txn.SenderPublicKey,
+			Signature:                  &signatureStr,
+			Value:                      &value32,
+		}
+
+		m, _ := json.Marshal(bt)
+		buf := bytes.NewBuffer(m)
+
+		resp, _ := http.Post(ws.Gateway()+"/transactions", "application/json", buf)
+
+		if resp.StatusCode == 201 {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Transaction processed successfully"))
+			// fmt.Println("\n*** >>> TRANSACTION SUCCESS! <<< ***")
+			return
+		}
+
+		io.WriteString(w, "Transaction FAILED!")
+		fmt.Println("\n*** >>> TRANSACTION FAILED! <<< ***")
 
 	default:
 		w.WriteHeader(http.StatusBadRequest)

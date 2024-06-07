@@ -31,18 +31,18 @@
                     value: parseFloat($('#send_amount').val())
                 };
 
-                console.log("Value - ", typeof txnData.value)
-
                 $.ajax({
                     url: "/transaction",
                     type: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(txnData),
-                    success: function (response) {
-                        console.info("Transaction successful:", response);
-                    },
-                    error: function (err) {
-                        console.error("Transaction error:", err);
+                    complete: function (jqXHR, textStatus) {
+                        // console.log('Complete:', jqXHR);
+                        if (jqXHR.status !== 200) {
+                            window.alert("FAIL")
+                        } else {
+                            window.alert("SUCCESS")
+                        }
                     }
                 });
             });
