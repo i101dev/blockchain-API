@@ -59,6 +59,6 @@ func (bcs *BlockchainServer) Run() {
 
 	hostURL := "0.0.0.0:" + strconv.Itoa(int(bcs.Port()))
 
-	fmt.Println("Server is live @:", hostURL)
+	fmt.Println("Blockchain Server is live @:", hostURL)
 	log.Fatal(http.ListenAndServe(hostURL, nil))
 }
