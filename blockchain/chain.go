@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/i101dev/blockchain-api/utils"
 )
@@ -16,11 +17,13 @@ const (
 	MINING_DIFFICULTY = 3
 	MINING_REWARD     = 100.0
 	MINING_SENDER     = "THE BLOCKCHAIN"
+	MINING_TIMER      = 20
 )
 
 // ------------------------------------------------------------------
 
 type Blockchain struct {
+	mux               sync.Mutex
 	transactionPool   []*Transaction // equivalent to `memPool`
 	chain             []*Block
 	blockchainAddress string
@@ -155,12 +158,28 @@ func (bc *Blockchain) LastBlock() *Block {
 }
 
 func (bc *Blockchain) Mining() bool {
+
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	if len(bc.transactionPool) == 0 {
+		fmt.Println("\nNo transactions - Mining skipped")
+		return false
+	}
+
+	fmt.Println("\nMining NOW!")
+
 	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD, nil, nil)
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
 	// log.Println("action=mining, status=success")
 	return true
+}
+
+func (bc *Blockchain) StartMining() {
+	bc.Mining()
+	_ = time.AfterFunc(time.Second*MINING_TIMER, bc.StartMining)
 }
 
 func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
@@ -235,34 +254,48 @@ type TransactionRequest struct {
 
 func (tr *TransactionRequest) Validate() bool {
 
-	// if tr.SenderBlockchainAddress == nil ||
-	// 	tr.RecipientBlockchainAddress == nil ||
-	// 	tr.SenderPublicKey == nil ||
-	// 	tr.Signature == nil ||
-	// 	tr.Value == nil {
+	if tr.SenderBlockchainAddress == nil ||
+		tr.RecipientBlockchainAddress == nil ||
+		tr.SenderPublicKey == nil ||
+		tr.Signature == nil ||
+		tr.Value == nil {
+		return false
+	}
+
+	// if tr.Value == nil {
+	// 	log.Println("Value MISSING")
+	// 	return false
+	// }
+	// if tr.SenderBlockchainAddress == nil {
+	// 	log.Println("SenderBlockchainAddress MISSING")
+	// 	return false
+	// }
+	// if tr.RecipientBlockchainAddress == nil {
+	// 	log.Println("RecipientBlockchainAddress MISSING")
+	// 	return false
+	// }
+	// if tr.SenderPublicKey == nil {
+	// 	log.Println("SenderPublicKey MISSING")
+	// 	return false
+	// }
+	// if tr.Signature == nil {
+	// 	log.Println("Signature MISSING")
 	// 	return false
 	// }
 
-	if tr.Value == nil {
-		log.Println("Value MISSING")
-		return false
-	}
-	if tr.SenderBlockchainAddress == nil {
-		log.Println("SenderBlockchainAddress MISSING")
-		return false
-	}
-	if tr.RecipientBlockchainAddress == nil {
-		log.Println("RecipientBlockchainAddress MISSING")
-		return false
-	}
-	if tr.SenderPublicKey == nil {
-		log.Println("SenderPublicKey MISSING")
-		return false
-	}
-	if tr.Signature == nil {
-		log.Println("Signature MISSING")
-		return false
-	}
-
 	return true
+}
+
+// -------------------------------------------------------------------------
+
+type AmountResponse struct {
+	Amount float32 `json:"amount"`
+}
+
+func (ar *AmountResponse) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Amount float32 `json:"amount"`
+	}{
+		Amount: ar.Amount,
+	})
 }

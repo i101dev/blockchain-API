@@ -36,7 +36,7 @@
                     type: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(txnData),
-                    complete: function (jqXHR, textStatus) {
+                    complete: function (jqXHR) {
                         // console.log('Complete:', jqXHR);
                         if (jqXHR.status !== 200) {
                             window.alert("FAIL")
@@ -46,6 +46,32 @@
                     }
                 });
             });
+
+            function reload_amount() {
+                let data = { "blockchain_address": $('#address').val() }
+                $.ajax({
+                    url: "/wallet/amount",
+                    type: "GET",
+                    data: data,
+                    complete: function (jqXHR) {
+                        console.log('Complete:', jqXHR);
+                        if (jqXHR.status !== 200) {
+                            window.alert("FAIL")
+                        } else {
+                            window.alert("SUCCESS")
+                            let amount = jqXHR.responseJSON['amount']
+                            console.log("Amount: ", amount)
+                            $('#wallet_amount').text(amount)
+                        }
+                    }
+                })
+            }
+
+            $('#reload_wallet').click(function () {
+                reload_amount()
+            })
+
+            // setInterval(reload_amount, 3000)
         })
 
 
